@@ -47,7 +47,7 @@ fn main() {
     let current_accumulator = BatchedAccumulator::deserialize(
         &challenge_readable_map,
         CheckForCorrectness::Yes,
-        UseCompression::No,
+        UseCompression::Yes,
         &parameters,
     )
     .expect("unable to read compressed accumulator");
