@@ -31,7 +31,8 @@ fn main() {
     let reduced_circuit_power = args[4].parse().expect("could not parse reduced circuit power");
     let batch_size = args[5].parse().expect("could not parse batch size");
 
-    let parameters = CeremonyParams::<Bn256>::new(reduced_circuit_power, batch_size);
+    let parameters = CeremonyParams::<Bn256>::new(original_circuit_power, batch_size);
+    let reduced_parameters = CeremonyParams::<Bn256>::new(reduced_circuit_power, batch_size);
 
     // Try to load the challenge from disk.
     let reader = OpenOptions::new()
@@ -47,12 +48,12 @@ fn main() {
     let current_accumulator = BatchedAccumulator::deserialize(
         &challenge_readable_map,
         CheckForCorrectness::Yes,
-        UseCompression::Yes,
+        UseCompression::No,
         &parameters,
     )
     .expect("unable to read compressed accumulator");
 
-    let mut reduced_accumulator = BatchedAccumulator::empty(&parameters);
+    let mut reduced_accumulator = BatchedAccumulator::empty(&reduced_parameters);
     reduced_accumulator.tau_powers_g1 =
         current_accumulator.tau_powers_g1[..parameters.powers_g1_length].to_vec();
     reduced_accumulator.tau_powers_g2 =
@@ -82,7 +83,7 @@ fn main() {
     };
 
     let hash = reduced_hash(
-        original_circuit_power,
+        original_circuit_power as u8,
         parameters.size as u8,
     );
     (&mut writable_map[0..])
