@@ -546,6 +546,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         check_input_for_correctness: CheckForCorrectness,
         parameters: &'a CeremonyParams<E>,
     ) -> io::Result<()> {
+        println!("========decompress");
         use itertools::MinMaxResult::MinMax;
 
         let mut accumulator = Self::empty(parameters);
@@ -557,7 +558,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
                     .read_chunk(
                         start,
                         size,
-                        UseCompression::Yes,
+                        UseCompression::No,
                         check_input_for_correctness,
                         &input_map,
                     )
@@ -582,7 +583,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
                     .read_chunk(
                         start,
                         size,
-                        UseCompression::Yes,
+                        UseCompression::No,
                         check_input_for_correctness,
                         &input_map,
                     )
@@ -622,7 +623,10 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         check_input_for_correctness: CheckForCorrectness,
         compression: UseCompression,
         parameters: &'a CeremonyParams<E>,
+        reduced_parameters: Option<&'a CeremonyParams<E>>,
     ) -> io::Result<BatchedAccumulator<'a, E>> {
+        let to_read_parameters = reduced_parameters.unwrap_or(parameters);
+
         use itertools::MinMaxResult::MinMax;
 
         let mut accumulator = Self::empty(parameters);
@@ -632,8 +636,9 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         let mut alpha_tau_powers_g1 = vec![];
         let mut beta_tau_powers_g1 = vec![];
         let mut beta_g2 = vec![];
+        println!("{}", accumulator.tau_powers_g2.len());
 
-        for chunk in &(0..parameters.powers_length).chunks(parameters.batch_size) {
+        for chunk in &(0..to_read_parameters.powers_length).chunks(parameters.batch_size) {
             if let MinMax(start, end) = chunk.minmax() {
                 let size = end - start + 1;
                 accumulator
@@ -650,6 +655,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
                             start, end
                         ))
                     });
+                println!("{}", accumulator.tau_powers_g2.len());
                 tau_powers_g1.extend_from_slice(&accumulator.tau_powers_g1);
                 tau_powers_g2.extend_from_slice(&accumulator.tau_powers_g2);
                 alpha_tau_powers_g1.extend_from_slice(&accumulator.alpha_tau_powers_g1);
@@ -660,10 +666,13 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
             } else {
                 panic!("Chunk does not have a min and max");
             }
+            println!("{}", accumulator.tau_powers_g2.len());
         }
 
+        println!("{}, {}", to_read_parameters.powers_length, to_read_parameters.powers_g1_length);
+        println!("{}, {}", parameters.powers_length, parameters.powers_g1_length);
         for chunk in
-            &(parameters.powers_length..parameters.powers_g1_length).chunks(parameters.batch_size)
+            &(to_read_parameters.powers_length..to_read_parameters.powers_g1_length).chunks(parameters.batch_size)
         {
             if let MinMax(start, end) = chunk.minmax() {
                 let size = end - start + 1;
