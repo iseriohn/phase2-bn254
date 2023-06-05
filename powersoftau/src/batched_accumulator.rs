@@ -666,7 +666,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         }
 
         for chunk in
-            &(to_read_parameters.powers_length..to_read_parameters.powers_g1_length).chunks(parameters.batch_size)
+            &(parameters.powers_length..parameters.powers_length + to_read_parameters.powers_g1_length - to_read_parameters.powers_length).chunks(parameters.batch_size)
         {
             if let MinMax(start, end) = chunk.minmax() {
                 let size = end - start + 1;
