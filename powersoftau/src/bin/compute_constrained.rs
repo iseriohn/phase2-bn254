@@ -135,8 +135,8 @@ fn main() {
 
     println!("Calculating previous contribution hash...");
     
-    let current_accumulator_hash = Blake2b::default().result();
-/*
+    // let current_accumulator_hash = Blake2b::default().result();
+
     assert!(
         UseCompression::No == INPUT_IS_COMPRESSED,
         "Hashing the compressed file in not yet defined"
@@ -186,7 +186,7 @@ fn main() {
             println!();
         }
     }
-*/
+
     // Construct our keypair using the RNG we created above
     let (pubkey, privkey) = keypair(&mut rng, current_accumulator_hash.as_ref());
 

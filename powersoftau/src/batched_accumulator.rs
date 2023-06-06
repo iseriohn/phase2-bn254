@@ -898,7 +898,9 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         checked: CheckForCorrectness,
         input_map: &Mmap,
     ) -> Result<Vec<ENC::Affine>, DeserializationError> {
+        #[cfg(feature = "sanity-check")]
         println!("from: {}, size: {}, element_type: {:?}", from, size, element_type);
+        
         // Read the encoded elements
         let mut res = vec![ENC::empty(); size];
 
@@ -989,7 +991,9 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         // extra check that during the decompression all the the initially initialized infinitu points
         // were replaced with something
         for decoded in res_affine.iter() {
+            #[cfg(feature = "sanity-check")]
             println!("{:?}", decoded);
+            
             if decoded.is_zero() {
                 return Err(DeserializationError::PointAtInfinity);
             }
