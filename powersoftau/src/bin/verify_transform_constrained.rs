@@ -172,7 +172,7 @@ fn main() {
         current_accumulator_hash.as_slice(),
         PREVIOUS_CHALLENGE_IS_COMPRESSED,
         CONTRIBUTION_IS_COMPRESSED,
-        CheckForCorrectness::No,
+        CheckForCorrectness::Yes,
         CheckForCorrectness::Yes,
         &parameters,
     );

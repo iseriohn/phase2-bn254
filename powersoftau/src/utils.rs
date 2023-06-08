@@ -213,7 +213,7 @@ fn dense_multiexp_inner<G: CurveAffine>(
     use std::sync::Mutex;
     // Perform this region of the multiexp. We use a different strategy - go over region in parallel,
     // then over another region, etc. No Arc required
-    let chunk = (bases.len() / num_cpus::get()) + 1;
+    let chunk = (bases.len() - 1) / num_cpus::get() + 1;
     let this = {
         // let mask = (1u64 << c) - 1u64;
         let this_region = Mutex::new(<G as CurveAffine>::Projective::zero());
