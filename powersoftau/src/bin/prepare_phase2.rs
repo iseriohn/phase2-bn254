@@ -52,7 +52,6 @@ fn main() {
         CheckForCorrectness::Yes,
         UseCompression::Yes,
         &parameters,
-        None,
     )
     .expect("unable to read uncompressed accumulator");
 

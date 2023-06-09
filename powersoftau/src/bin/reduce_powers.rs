@@ -50,7 +50,6 @@ fn main() {
         CheckForCorrectness::Yes,
         UseCompression::No,
         &parameters,
-        Some(&reduced_parameters),
     )
     .expect("unable to read compressed accumulator");
 

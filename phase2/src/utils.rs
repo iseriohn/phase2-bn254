@@ -63,7 +63,7 @@ pub fn merge_pairs<G: CurveAffine>(v1: &[G], v2: &[G]) -> (G, G)
 
     assert_eq!(v1.len(), v2.len());
 
-    let chunk = (v1.len() - 1) / num_cpus::get() + 1;
+    let chunk = (v1.len() / num_cpus::get()) + 1;
 
     let s = Arc::new(Mutex::new(G::Projective::zero()));
     let sx = Arc::new(Mutex::new(G::Projective::zero()));

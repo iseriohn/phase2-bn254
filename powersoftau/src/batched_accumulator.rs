@@ -622,10 +622,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         check_input_for_correctness: CheckForCorrectness,
         compression: UseCompression,
         parameters: &'a CeremonyParams<E>,
-        reduced_parameters: Option<&'a CeremonyParams<E>>,
     ) -> io::Result<BatchedAccumulator<'a, E>> {
-        let to_read_parameters = reduced_parameters.unwrap_or(parameters);
-
         use itertools::MinMaxResult::MinMax;
 
         let mut accumulator = Self::empty(parameters);
@@ -636,7 +633,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         let mut beta_tau_powers_g1 = vec![];
         let mut beta_g2 = vec![];
 
-        for chunk in &(0..to_read_parameters.powers_length).chunks(parameters.batch_size) {
+        for chunk in &(0..parameters.powers_length).chunks(parameters.batch_size) {
             if let MinMax(start, end) = chunk.minmax() {
                 let size = end - start + 1;
                 accumulator
@@ -666,7 +663,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         }
 
         for chunk in
-            &(to_read_parameters.powers_length..to_read_parameters.powers_g1_length).chunks(parameters.batch_size)
+            &(parameters.powers_length..parameters.powers_g1_length).chunks(parameters.batch_size)
         {
             if let MinMax(start, end) = chunk.minmax() {
                 let size = end - start + 1;
@@ -684,10 +681,6 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
                             start, end
                         ))
                     });
-                tau_powers_g1.extend_from_slice(&accumulator.tau_powers_g1);
-
-/* The following assertions shouldn't be done because with larger power size,
-   elements such as tau_powers_g2 will interleave.
                 assert_eq!(
                     accumulator.tau_powers_g2.len(),
                     0,
@@ -703,10 +696,11 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
                     0,
                     "during rest of tau g1 generation beta*tau in g1 must be empty"
                 );
+
+                tau_powers_g1.extend_from_slice(&accumulator.tau_powers_g1);
                 tau_powers_g2.extend_from_slice(&accumulator.tau_powers_g2);
                 alpha_tau_powers_g1.extend_from_slice(&accumulator.alpha_tau_powers_g1);
                 beta_tau_powers_g1.extend_from_slice(&accumulator.beta_tau_powers_g1);
-*/
             } else {
                 panic!("Chunk does not have a min and max");
             }
@@ -719,7 +713,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
             beta_tau_powers_g1,
             beta_g2: beta_g2[0],
             hash: blank_hash(),
-            parameters: to_read_parameters,
+            parameters,
         })
     }
 
@@ -901,9 +895,6 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         checked: CheckForCorrectness,
         input_map: &Mmap,
     ) -> Result<Vec<ENC::Affine>, DeserializationError> {
-        #[cfg(feature = "sanity-check")]
-        println!("from: {}, size: {}, element_type: {:?}", from, size, element_type);
-        
         // Read the encoded elements
         let mut res = vec![ENC::empty(); size];
 
@@ -935,7 +926,10 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         // Allocate space for the deserialized elements
         let mut res_affine = vec![ENC::Affine::zero(); size];
 
-        let mut chunk_size = (res.len() - 1) / num_cpus::get() + 1;
+        let mut chunk_size = res.len() / num_cpus::get();
+        if chunk_size == 0 {
+            chunk_size = 1;
+        }
 
         // If any of our threads encounter a deserialization/IO error, catch
         // it with this.
@@ -991,9 +985,6 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         // extra check that during the decompression all the the initially initialized infinitu points
         // were replaced with something
         for decoded in res_affine.iter() {
-            #[cfg(feature = "sanity-check")]
-            println!("{:?}", decoded);
-
             if decoded.is_zero() {
                 return Err(DeserializationError::PointAtInfinity);
             }
@@ -1143,7 +1134,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         ) {
             assert_eq!(bases.len(), exp.len());
             let mut projective = vec![C::Projective::zero(); bases.len()];
-            let mut chunk_size = (bases.len() - 1) / num_cpus::get() + 1;
+            let chunk_size = bases.len() / num_cpus::get();
 
             // Perform wNAF over multiple cores, placing results into `projective`.
             crossbeam::scope(|scope| {
@@ -1208,7 +1199,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
 
                 // Construct the powers of tau
                 let mut taupowers = vec![E::Fr::zero(); size];
-                let mut chunk_size = (size - 1) / num_cpus::get() + 1;
+                let chunk_size = size / num_cpus::get();
 
                 // Construct exponents in parallel
                 crossbeam::scope(|scope| {
@@ -1270,7 +1261,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
 
                 // Construct the powers of tau
                 let mut taupowers = vec![E::Fr::zero(); size];
-                let mut chunk_size = (size - 1) / num_cpus::get() + 1;
+                let chunk_size = size / num_cpus::get();
 
                 // Construct exponents in parallel
                 crossbeam::scope(|scope| {
