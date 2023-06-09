@@ -1042,7 +1042,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
                 }
             }
             ElementType::BetaG2 => {
-                let index = 0;
+                let index = chunk_start;
                 self.write_point(
                     index,
                     &self.beta_g2.clone(),

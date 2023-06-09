@@ -11,11 +11,9 @@ use std::fs::OpenOptions;
 
 use std::io::{Read, Write};
 
-use blake2::{Blake2b, Digest};
-
 const INPUT_IS_COMPRESSED: UseCompression = UseCompression::No;
 const COMPRESS_THE_OUTPUT: UseCompression = UseCompression::Yes;
-const CHECK_INPUT_CORRECTNESS: CheckForCorrectness = CheckForCorrectness::Yes;
+const CHECK_INPUT_CORRECTNESS: CheckForCorrectness = CheckForCorrectness::No;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -134,8 +132,6 @@ fn main() {
     };
 
     println!("Calculating previous contribution hash...");
-    
-    // let current_accumulator_hash = Blake2b::default().result();
 
     assert!(
         UseCompression::No == INPUT_IS_COMPRESSED,
