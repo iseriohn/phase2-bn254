@@ -8,7 +8,7 @@ use phase2::circom_circuit::circuit_from_json_file;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() != 5 {
+    if args.len() != 3 {
         println!("Usage: \n<in_old_params.params> <in_new_params.params>");
         std::process::exit(exitcode::USAGE);
     }
