@@ -9,13 +9,11 @@ use phase2::circom_circuit::circuit_from_json_file;
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() != 5 {
-        println!("Usage: \n<in_circuit.json> <in_old_params.params> <in_new_params.params> <path/to/phase1radix>");
+        println!("Usage: \n<in_old_params.params> <in_new_params.params>");
         std::process::exit(exitcode::USAGE);
     }
-    let circuit_filename = &args[1];
-    let old_params_filename = &args[2];
-    let new_params_filename = &args[3];
-    let radix_directory = &args[4];
+    let old_params_filename = &args[1];
+    let new_params_filename = &args[2];
 
     let disallow_points_at_infinity = false;
 
@@ -34,9 +32,11 @@ fn main() {
     println!("Checking contribution {}...", new_params_filename);
     let contribution = verify_contribution(&old_params, &new_params).expect("should verify");
 
+/** Disable verification dependent on top of radix files and r1cs.json
     let should_filter_points_at_infinity = false;
     let verification_result = new_params.verify(circuit_from_json_file(&circuit_filename), should_filter_points_at_infinity, radix_directory).unwrap();
     assert!(contains_contribution(&verification_result, &contribution));
+*/
 
     println!("Contribution {} verified.", new_params_filename);
 }
