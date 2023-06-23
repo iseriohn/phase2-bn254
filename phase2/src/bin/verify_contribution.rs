@@ -37,6 +37,5 @@ fn main() {
     let should_filter_points_at_infinity = false;
     let verification_result = new_params.verify(circuit_from_json_file(&circuit_filename), should_filter_points_at_infinity, radix_directory).unwrap();
     assert!(contains_contribution(&verification_result, &contribution));
-
     println!("Contribution {} verified.", new_params_filename);
 }
