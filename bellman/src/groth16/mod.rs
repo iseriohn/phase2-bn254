@@ -12,6 +12,7 @@ use crate::source::SourceBuilder;
 use std::io::{self, Read, Write};
 use std::sync::Arc;
 use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
+use std::fmt::Debug;
 
 #[cfg(test)]
 mod tests;
@@ -160,31 +161,53 @@ impl<E: Engine> VerifyingKey<E> {
     pub fn read<R: Read>(
         mut reader: R
     ) -> io::Result<Self>
+    where <<E as Engine>::G1Affine as CurveAffine>::Uncompressed: Debug,
+    <<E as Engine>::G2Affine as CurveAffine>::Uncompressed: Debug
     {
         let mut g1_repr = <E::G1Affine as CurveAffine>::Uncompressed::empty();
         let mut g2_repr = <E::G2Affine as CurveAffine>::Uncompressed::empty();
 
         reader.read_exact(g1_repr.as_mut())?;
         let alpha_g1 = g1_repr.into_affine().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+       
+        #[cfg(feature = "sanity-check")]
+        println!("alpha_g1 {:?}", g1_repr);
 
         reader.read_exact(g1_repr.as_mut())?;
         let beta_g1 = g1_repr.into_affine().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        
+        #[cfg(feature = "sanity-check")]
+        println!("beta_g1 {:?}", g1_repr);
 
         reader.read_exact(g2_repr.as_mut())?;
         let beta_g2 = g2_repr.into_affine().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+       
+        #[cfg(feature = "sanity-check")]
+        println!("beta_g2 {:?}", g2_repr);
 
         reader.read_exact(g2_repr.as_mut())?;
         let gamma_g2 = g2_repr.into_affine().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        
+        #[cfg(feature = "sanity-check")]
+        println!("gamma_g2 {:?}", g2_repr);
 
         reader.read_exact(g1_repr.as_mut())?;
         let delta_g1 = g1_repr.into_affine().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        
+        #[cfg(feature = "sanity-check")]
+        println!("delta_g1 {:?}", g1_repr);
 
         reader.read_exact(g2_repr.as_mut())?;
         let delta_g2 = g2_repr.into_affine().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        
+        #[cfg(feature = "sanity-check")]
+        println!("delta_g2 {:?}", g2_repr);
 
         let ic_len = reader.read_u32::<BigEndian>()? as usize;
-
         let mut ic = vec![];
+        
+        #[cfg(feature = "sanity-check")]
+        println!("IC len {:?}", ic_len);
 
         for _ in 0..ic_len {
             reader.read_exact(g1_repr.as_mut())?;
@@ -198,6 +221,9 @@ impl<E: Engine> VerifyingKey<E> {
                      })?;
 
             ic.push(g1);
+
+            #[cfg(feature = "sanity-check")]
+            println!("IC len {:?}", ic_len);
         }
 
         Ok(VerifyingKey {
@@ -289,10 +315,16 @@ impl<E: Engine> Parameters<E> {
         disallow_points_at_infinity: bool,
         checked: bool
     ) -> io::Result<Self>
+    where <<E as Engine>::G1Affine as CurveAffine>::Uncompressed: Debug,
+    <<E as Engine>::G2Affine as CurveAffine>::Uncompressed: Debug
     {
         let read_g1 = |reader: &mut R| -> io::Result<E::G1Affine> {
             let mut repr = <E::G1Affine as CurveAffine>::Uncompressed::empty();
+            
             reader.read_exact(repr.as_mut())?;
+
+            #[cfg(feature = "sanity-check")]
+            println!("G1 {:?}", repr.into_affine());
 
             if checked {
                 repr
@@ -313,6 +345,9 @@ impl<E: Engine> Parameters<E> {
             let mut repr = <E::G2Affine as CurveAffine>::Uncompressed::empty();
             reader.read_exact(repr.as_mut())?;
 
+            #[cfg(feature = "sanity-check")]
+            println!("G2 {:?}", repr.into_affine());
+
             if checked {
                 repr
                 .into_affine()
@@ -328,6 +363,9 @@ impl<E: Engine> Parameters<E> {
             })
         };
 
+        #[cfg(feature = "sanity-check")]
+        println!("vk");
+        
         let vk = VerifyingKey::<E>::read(&mut reader)?;
 
         let mut h = vec![];
@@ -336,6 +374,9 @@ impl<E: Engine> Parameters<E> {
         let mut b_g1 = vec![];
         let mut b_g2 = vec![];
 
+        #[cfg(feature = "sanity-check")]
+        println!("hi");
+        
         {
             let len = reader.read_u32::<BigEndian>()? as usize;
             for _ in 0..len {
@@ -343,6 +384,9 @@ impl<E: Engine> Parameters<E> {
             }
         }
 
+        #[cfg(feature = "sanity-check")]
+        println!("l");
+        
         {
             let len = reader.read_u32::<BigEndian>()? as usize;
             for _ in 0..len {
@@ -350,6 +394,9 @@ impl<E: Engine> Parameters<E> {
             }
         }
 
+        #[cfg(feature = "sanity-check")]
+        println!("a");
+        
         {
             let len = reader.read_u32::<BigEndian>()? as usize;
             for _ in 0..len {
@@ -357,6 +404,9 @@ impl<E: Engine> Parameters<E> {
             }
         }
 
+        #[cfg(feature = "sanity-check")]
+        println!("b_g1");
+        
         {
             let len = reader.read_u32::<BigEndian>()? as usize;
             for _ in 0..len {
@@ -364,6 +414,9 @@ impl<E: Engine> Parameters<E> {
             }
         }
 
+        #[cfg(feature = "sanity-check")]
+        println!("b_g2");
+        
         {
             let len = reader.read_u32::<BigEndian>()? as usize;
             for _ in 0..len {

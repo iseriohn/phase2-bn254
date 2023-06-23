@@ -40,3 +40,4 @@ console_error_panic_hook = { version = "0.1.6", optional = true }
 [features]
 default = ["bellman_ce/multicore", "rust-crypto"]
 wasm = ["wasm-bindgen", "js-sys", "web-sys", "console_error_panic_hook", "bellman_ce/wasm"]
+sanity-check = ["default", "bellman_ce/sanity-check"]

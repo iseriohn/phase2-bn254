@@ -537,45 +537,45 @@ impl MPCParameters {
 
         // H/L will change, but should have same length
         if initial_params.params.h.len() != self.params.h.len() {
-            return Err(());
+            panic!("H will change, but should have same length");
         }
         if initial_params.params.l.len() != self.params.l.len() {
-            return Err(());
+            panic!("L will change, but should have same length");
         }
 
         // A/B_G1/B_G2 doesn't change at all
         if initial_params.params.a != self.params.a {
-            return Err(());
+            panic!("A doesn't change at all");
         }
         if initial_params.params.b_g1 != self.params.b_g1 {
-            return Err(());
+            panic!("B_G1 doesn't change at all");
         }
         if initial_params.params.b_g2 != self.params.b_g2 {
-            return Err(());
+            panic!("B_G2 doesn't change at all");
         }
 
         // alpha/beta/gamma don't change
         if initial_params.params.vk.alpha_g1 != self.params.vk.alpha_g1 {
-            return Err(());
+            panic!("alpha don't change");
         }
         if initial_params.params.vk.beta_g1 != self.params.vk.beta_g1 {
-            return Err(());
+            panic!("beta_g1 don't change");
         }
         if initial_params.params.vk.beta_g2 != self.params.vk.beta_g2 {
-            return Err(());
+            panic!("beta_g2 don't change");
         }
         if initial_params.params.vk.gamma_g2 != self.params.vk.gamma_g2 {
-            return Err(());
+            panic!("gamma don't change");
         }
 
         // IC shouldn't change, as gamma doesn't change
         if initial_params.params.vk.ic != self.params.vk.ic {
-            return Err(());
+            panic!("IC shouldn't change, as gamma doesn't change");
         }
 
         // cs_hash should be the same
         if &initial_params.cs_hash[..] != &self.cs_hash[..] {
-            return Err(());
+            panic!("cs_hash should be the same");
         }
 
         let sink = io::sink();
@@ -596,14 +596,14 @@ impl MPCParameters {
 
             // The transcript must be consistent
             if &pubkey.transcript[..] != h.as_ref() {
-                return Err(());
+                panic!("The transcript must be consistent");
             }
 
             let r = hash_to_g2(h.as_ref()).into_affine();
 
             // Check the signature of knowledge
             if !same_ratio((r, pubkey.r_delta), (pubkey.s, pubkey.s_delta)) {
-                return Err(());
+                panic!("Check the signature of knowledge");
             }
 
             // Check the change from the old delta is consistent
@@ -611,7 +611,7 @@ impl MPCParameters {
                 (current_delta, pubkey.delta_after),
                 (r, pubkey.r_delta)
             ) {
-                return Err(());
+                panic!("Check the change from the old delta is consistent");
             }
 
             current_delta = pubkey.delta_after;
@@ -629,7 +629,7 @@ impl MPCParameters {
 
         // Current parameters should have consistent delta in G1
         if current_delta != self.params.vk.delta_g1 {
-            return Err(());
+            panic!("Current parameters should have consistent delta in G1");
         }
 
         // Current parameters should have consistent delta in G2
@@ -637,7 +637,7 @@ impl MPCParameters {
             (G1Affine::one(), current_delta),
             (G2Affine::one(), self.params.vk.delta_g2)
         ) {
-            return Err(());
+            panic!("Current parameters should have consistent delta in G2");
         }
 
         // H and L queries should be updated with delta^-1
@@ -645,14 +645,14 @@ impl MPCParameters {
             merge_pairs(&initial_params.params.h, &self.params.h),
             (self.params.vk.delta_g2, G2Affine::one()) // reversed for inverse
         ) {
-            return Err(());
+            panic!("H queries should be updated with delta^-1");
         }
 
         if !same_ratio(
             merge_pairs(&initial_params.params.l, &self.params.l),
             (self.params.vk.delta_g2, G2Affine::one()) // reversed for inverse
         ) {
-            return Err(());
+            panic!("L queries should be updated with delta^-1");
         }
 
         Ok(result)
@@ -691,7 +691,7 @@ impl MPCParameters {
         reader.read_exact(&mut cs_hash)?;
 
         let contributions_len = reader.read_u32::<BigEndian>()? as usize;
-
+        
         let mut contributions = vec![];
         for _ in 0..contributions_len {
             contributions.push(PublicKey::read(&mut reader)?);
@@ -730,55 +730,55 @@ pub fn verify_contribution(
 {
     // Transformation involves a single new object
     if after.contributions.len() != (before.contributions.len() + 1) {
-        return Err(());
+        panic!("Transformation involves a single new object");
     }
 
     // None of the previous transformations should change
     if &before.contributions[..] != &after.contributions[0..before.contributions.len()] {
-        return Err(());
+        panic!("None of the previous transformations should change");
     }
 
     // H/L will change, but should have same length
     if before.params.h.len() != after.params.h.len() {
-        return Err(());
+        panic!("H will change, but should have same length");
     }
     if before.params.l.len() != after.params.l.len() {
-        return Err(());
+        panic!("L will change, but should have same length");
     }
 
     // A/B_G1/B_G2 doesn't change at all
     if before.params.a != after.params.a {
-        return Err(());
+        panic!("A doesn't change at all");
     }
     if before.params.b_g1 != after.params.b_g1 {
-        return Err(());
+        panic!("B_G1 doesn't change at all");
     }
     if before.params.b_g2 != after.params.b_g2 {
-        return Err(());
+        panic!("B_G2 doesn't change at all");
     }
 
     // alpha/beta/gamma don't change
     if before.params.vk.alpha_g1 != after.params.vk.alpha_g1 {
-        return Err(());
+        panic!("alpha don't change");
     }
     if before.params.vk.beta_g1 != after.params.vk.beta_g1 {
-        return Err(());
+        panic!("beta_g1 don't change");
     }
     if before.params.vk.beta_g2 != after.params.vk.beta_g2 {
-        return Err(());
+        panic!("beta_g2 don't change");
     }
     if before.params.vk.gamma_g2 != after.params.vk.gamma_g2 {
-        return Err(());
+        panic!("gamma don't change");
     }
 
     // IC shouldn't change, as gamma doesn't change
     if before.params.vk.ic != after.params.vk.ic {
-        return Err(());
+        panic!("IC shouldn't change, as gamma doesn't change");
     }
 
     // cs_hash should be the same
     if &before.cs_hash[..] != &after.cs_hash[..] {
-        return Err(());
+        panic!("cs_hash should be the same");
     }
 
     let sink = io::sink();
@@ -797,14 +797,14 @@ pub fn verify_contribution(
 
     // The transcript must be consistent
     if &pubkey.transcript[..] != h.as_ref() {
-        return Err(());
+        panic!("The transcript must be consistent");
     }
 
     let r = hash_to_g2(h.as_ref()).into_affine();
 
     // Check the signature of knowledge
     if !same_ratio((r, pubkey.r_delta), (pubkey.s, pubkey.s_delta)) {
-        return Err(());
+        panic!("Check the signature of knowledge");
     }
 
     // Check the change from the old delta is consistent
@@ -812,12 +812,12 @@ pub fn verify_contribution(
         (before.params.vk.delta_g1, pubkey.delta_after),
         (r, pubkey.r_delta)
     ) {
-        return Err(());
+        panic!("Check the change from the old delta is consistent");
     }
 
     // Current parameters should have consistent delta in G1
     if pubkey.delta_after != after.params.vk.delta_g1 {
-        return Err(());
+        panic!("Current parameters should have consistent delta in G1");
     }
 
     // Current parameters should have consistent delta in G2
@@ -825,7 +825,7 @@ pub fn verify_contribution(
         (G1Affine::one(), pubkey.delta_after),
         (G2Affine::one(), after.params.vk.delta_g2)
     ) {
-        return Err(());
+        panic!("Current parameters should have consistent delta in G2");
     }
 
     // H and L queries should be updated with delta^-1
@@ -833,14 +833,14 @@ pub fn verify_contribution(
         merge_pairs(&before.params.h, &after.params.h),
         (after.params.vk.delta_g2, before.params.vk.delta_g2) // reversed for inverse
     ) {
-        return Err(());
+        panic!("H queries should be updated with delta^-1");
     }
 
     if !same_ratio(
         merge_pairs(&before.params.l, &after.params.l),
         (after.params.vk.delta_g2, before.params.vk.delta_g2) // reversed for inverse
     ) {
-        return Err(());
+        panic!("L queries should be updated with delta^-1");
     }
 
     let sink = io::sink();
