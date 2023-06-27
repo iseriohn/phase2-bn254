@@ -17,7 +17,7 @@
 
 // 2019 OKIMS
 
-pragma solidity ^0.6.0;
+pragma solidity ^0.6.6;
 
 library Pairing {
     uint256 constant PRIME_Q = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
@@ -170,7 +170,7 @@ contract Verifier {
     function verifyProof(
         bytes memory proof,
         uint256[<%vk_input_length%>] memory input
-    ) public view returns (bool r) {
+    ) public view returns (bool) {
         uint256[8] memory p = abi.decode(proof, (uint256[8]));
 
         // Make sure that each element in the proof is less than the prime q
