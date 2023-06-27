@@ -1,3 +1,4 @@
+extern crate hex;
 use powersoftau::{
     batched_accumulator::BatchedAccumulator,
     keypair::keypair,

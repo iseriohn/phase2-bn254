@@ -74,7 +74,7 @@ fn main() {
     let mut params = MPCParameters::read(&*challenge, disallow_points_at_infinity, true).expect("unable to read params");
 
     println!("Generating contribution...");
-    let hash = params.contribute(&mut rng);
+    let hash = params.contribute(&mut rng, &0);
     println!("Contribution hash: 0x{:02x}", hash.iter().format(""));
 
     println!("Uploading response");
