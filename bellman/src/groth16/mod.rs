@@ -223,7 +223,7 @@ impl<E: Engine> VerifyingKey<E> {
             ic.push(g1);
 
             #[cfg(feature = "sanity-check")]
-            println!("IC len {:?}", ic_len);
+            println!("IC: {:?}", g1_repr);
         }
 
         Ok(VerifyingKey {
@@ -324,7 +324,7 @@ impl<E: Engine> Parameters<E> {
             reader.read_exact(repr.as_mut())?;
 
             #[cfg(feature = "sanity-check")]
-            println!("G1 {:?}", repr.into_affine());
+            println!("G1 {:?}", repr);
 
             if checked {
                 repr
@@ -346,7 +346,7 @@ impl<E: Engine> Parameters<E> {
             reader.read_exact(repr.as_mut())?;
 
             #[cfg(feature = "sanity-check")]
-            println!("G2 {:?}", repr.into_affine());
+            println!("G2 {:?}", repr);
 
             if checked {
                 repr
