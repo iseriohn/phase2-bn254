@@ -4,7 +4,7 @@ extern crate exitcode;
 use std::fs::OpenOptions;
 
 use phase2::parameters::*;
-use phase2::circom_circuit::circuit_from_json_file;
+
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -30,7 +30,7 @@ fn main() {
     let new_params = MPCParameters::read(new_reader, disallow_points_at_infinity, true).expect("unable to read new params");
 
     println!("Checking contribution {}...", new_params_filename);
-    let contribution = verify_contribution(&old_params, &new_params).expect("should verify");
+    let _contribution = verify_contribution(&old_params, &new_params).expect("should verify");
 
 /** Disable verification dependent on top of radix files and r1cs.json
     let should_filter_points_at_infinity = false;
