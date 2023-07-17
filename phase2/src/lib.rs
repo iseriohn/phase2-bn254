@@ -22,6 +22,7 @@ pub mod hash_writer;
 pub mod parameters;
 pub mod utils;
 pub mod circom_circuit;
+pub mod phase2;
 
 cfg_if! {
     if #[cfg(feature = "wasm")] {
