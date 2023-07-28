@@ -1,7 +1,7 @@
 /// Memory constrained accumulator that checks parts of the initial information in parts that fit to memory
 /// and then contributes to entropy in parts as well
 use bellman_ce::pairing::ff::{Field, PrimeField};
-use bellman_ce::pairing::*;
+use bellman_ce::{pairing::*, get_chunk_size};
 use log::{error, info};
 
 use generic_array::GenericArray;
@@ -926,10 +926,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         // Allocate space for the deserialized elements
         let mut res_affine = vec![ENC::Affine::zero(); size];
 
-        let mut chunk_size = res.len() / num_cpus::get();
-        if chunk_size == 0 {
-            chunk_size = 1;
-        }
+        let mut chunk_size = get_chunk_size(res.len());
 
         // If any of our threads encounter a deserialization/IO error, catch
         // it with this.
@@ -1134,7 +1131,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
         ) {
             assert_eq!(bases.len(), exp.len());
             let mut projective = vec![C::Projective::zero(); bases.len()];
-            let chunk_size = bases.len() / num_cpus::get();
+            let chunk_size = get_chunk_size(bases.len());
 
             // Perform wNAF over multiple cores, placing results into `projective`.
             crossbeam::scope(|scope| {
@@ -1199,7 +1196,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
 
                 // Construct the powers of tau
                 let mut taupowers = vec![E::Fr::zero(); size];
-                let chunk_size = size / num_cpus::get();
+                let chunk_size = get_chunk_size(size);
 
                 // Construct exponents in parallel
                 crossbeam::scope(|scope| {
@@ -1261,7 +1258,7 @@ impl<'a, E: Engine> BatchedAccumulator<'a, E> {
 
                 // Construct the powers of tau
                 let mut taupowers = vec![E::Fr::zero(); size];
-                let chunk_size = size / num_cpus::get();
+                let chunk_size = get_chunk_size(size);
 
                 // Construct exponents in parallel
                 crossbeam::scope(|scope| {

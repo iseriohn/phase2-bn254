@@ -26,6 +26,10 @@ mod multiexp;
 #[cfg(test)]
 mod tests;
 
+pub fn get_chunk_size(total: usize) -> usize {
+    (total - 1) / num_cpus::get() + 1
+}
+
 cfg_if! {
     if #[cfg(feature = "multicore")] {
         #[cfg(feature = "wasm")]

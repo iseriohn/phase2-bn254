@@ -1,7 +1,6 @@
 extern crate bellman_ce;
 extern crate rand;
 extern crate byteorder;
-extern crate num_cpus;
 extern crate crossbeam;
 
 #[cfg(feature = "wasm")]
@@ -422,15 +421,12 @@ impl MPCParameters {
 
         #[cfg(not(feature = "wasm"))]
         fn batch_exp<C: CurveAffine>(bases: &mut [C], coeff: C::Scalar, progress_update_interval: &u32, total_exps: &u32) {
+            use bellman_ce::get_chunk_size;
+
             let coeff = coeff.into_repr();
 
             let mut projective = vec![C::Projective::zero(); bases.len()];
-            let cpus = num_cpus::get();
-            let chunk_size = if bases.len() < cpus {
-                1
-            } else {
-                bases.len() / cpus
-            };
+            let chunk_size = get_chunk_size(bases.len());
 
             // Perform wNAF over multiple cores, placing results into `projective`.
             crossbeam::scope(|scope| {

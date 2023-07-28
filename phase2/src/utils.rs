@@ -9,7 +9,7 @@ use byteorder::{
 use num_bigint::BigUint;
 use num_traits::Num;
 use std::sync::Arc;
-use bellman_ce::pairing::{
+use bellman_ce::{pairing::{
     ff::{
         PrimeField,
     },
@@ -22,7 +22,7 @@ use bellman_ce::pairing::{
         G2Affine,
         Fq12,
     }
-};
+}, get_chunk_size};
 use rand::{
     Rng,
     Rand,
@@ -63,7 +63,7 @@ pub fn merge_pairs<G: CurveAffine>(v1: &[G], v2: &[G]) -> (G, G)
 
     assert_eq!(v1.len(), v2.len());
 
-    let chunk = (v1.len() / num_cpus::get()) + 1;
+    let chunk = get_chunk_size(v1.len());
 
     let s = Arc::new(Mutex::new(G::Projective::zero()));
     let sx = Arc::new(Mutex::new(G::Projective::zero()));
