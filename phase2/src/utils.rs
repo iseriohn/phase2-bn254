@@ -22,7 +22,7 @@ use bellman_ce::{pairing::{
         G2Affine,
         Fq12,
     }
-}, get_chunk_size};
+}, get_chunk_size, SynthesisError};
 use rand::{
     Rng,
     Rand,
@@ -182,4 +182,23 @@ pub fn pairing_to_vec(p: &Fq12) -> Vec<Vec<Vec<String>>> {
             ]
         ],
     ]
+}
+
+#[derive(Debug)]
+pub struct Phase2Error {
+    msg: String,
+}
+
+impl Phase2Error {
+    pub fn new(msg: &str) -> Phase2Error {
+        Phase2Error { msg: msg.to_string() }
+    }
+}
+
+pub fn map_synthesis_phase2_error(e: SynthesisError) -> Phase2Error {
+    return Phase2Error::new(&format!("Synthesis error: {:?}", e))
+}
+
+pub fn map_io_phase2_error(e: std::io::Error) -> Phase2Error {
+    return Phase2Error::new(&format!("IO error: {:?}", e))
 }
