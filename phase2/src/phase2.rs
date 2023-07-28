@@ -72,3 +72,24 @@ pub fn contribute(
     }
     Ok(hash)
 }
+
+pub fn verify_single_contribution(
+    old_params_filename: &String,
+    new_params_filename: &String,
+) -> Result<[u8; 64], Phase2Error> {
+    let disallow_points_at_infinity = false;
+
+    let old_reader = OpenOptions::new()
+                                .read(true)
+                                .open(old_params_filename)
+                                .expect("unable to open old params");
+    let old_params = MPCParameters::read(old_reader, disallow_points_at_infinity, true).map_err(map_io_phase2_error)?;
+
+    let new_reader = OpenOptions::new()
+                                .read(true)
+                                .open(new_params_filename)
+                                .expect("unable to open new params");
+    let new_params = MPCParameters::read(new_reader, disallow_points_at_infinity, true).map_err(map_io_phase2_error)?;
+
+    verify_contribution(&old_params, &new_params)
+}
