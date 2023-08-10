@@ -8,6 +8,9 @@ use utils::Phase2Error;
 
 use crate::utils::map_io_phase2_error;
 
+/// Make a new contribution with entropy to the last params file (in_params_filename) 
+/// and writes to the new params file (out_params_filename).
+/// Returns the contribution hash if successful, otherwises returns the error message.
 pub fn contribute(
     in_params_filename: &String,
     out_params_filename: &String,
@@ -68,11 +71,13 @@ pub fn contribute(
     let mut f = File::create(out_params_filename).unwrap();
     params.write(&mut f).map_err(map_io_phase2_error)?;
     if print_progress {
-        println!("wrote");
+        println!("New parameters are wrote");
     }
     Ok(hash)
 }
 
+/// Verify the last contribution.
+/// Returns the hash of the contribution if valid, otherwise returns the error message.
 pub fn verify_single_contribution(
     old_params_filename: &String,
     new_params_filename: &String,
