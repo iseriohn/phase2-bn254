@@ -26,6 +26,7 @@ mod multiexp;
 #[cfg(test)]
 mod tests;
 
+/// Return chunk size for each thread given the total size to process.
 pub fn get_chunk_size(total: usize) -> usize {
     if total == 0 {
         0
