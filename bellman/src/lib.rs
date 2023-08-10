@@ -27,7 +27,11 @@ mod multiexp;
 mod tests;
 
 pub fn get_chunk_size(total: usize) -> usize {
-    (total - 1) / num_cpus::get() + 1
+    if total == 0 {
+        0
+    } else {
+        (total - 1) / num_cpus::get() + 1
+    }
 }
 
 cfg_if! {
