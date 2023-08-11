@@ -59,7 +59,7 @@ pub fn contribute(
     let reader = OpenOptions::new()
                             .read(true)
                             .open(in_params_filename)
-                            .expect("unable to open.");
+                            .map_err(map_io_phase2_error)?;
     let mut params = MPCParameters::read(reader, disallow_points_at_infinity, true).map_err(map_io_phase2_error)?;
 
     println!("Contributing to {}...", in_params_filename);
@@ -68,10 +68,10 @@ pub fn contribute(
     println!("Contribution hash: 0x{:02x}", hash.iter().format(""));
 
     println!("Writing parameters to {}.", out_params_filename);
-    let mut f = File::create(out_params_filename).unwrap();
+    let mut f = File::create(out_params_filename).map_err(map_io_phase2_error)?;
     params.write(&mut f).map_err(map_io_phase2_error)?;
     if print_progress {
-        println!("New parameters are wrote");
+        println!("New parameters are written to file");
     }
     Ok(hash)
 }
@@ -87,13 +87,13 @@ pub fn verify_single_contribution(
     let old_reader = OpenOptions::new()
                                 .read(true)
                                 .open(old_params_filename)
-                                .expect("unable to open old params");
+                                .map_err(map_io_phase2_error)?;
     let old_params = MPCParameters::read(old_reader, disallow_points_at_infinity, true).map_err(map_io_phase2_error)?;
 
     let new_reader = OpenOptions::new()
                                 .read(true)
                                 .open(new_params_filename)
-                                .expect("unable to open new params");
+                                .map_err(map_io_phase2_error)?;
     let new_params = MPCParameters::read(new_reader, disallow_points_at_infinity, true).map_err(map_io_phase2_error)?;
 
     verify_contribution(&old_params, &new_params)
