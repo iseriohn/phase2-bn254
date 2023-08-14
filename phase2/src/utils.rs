@@ -186,7 +186,7 @@ pub fn pairing_to_vec(p: &Fq12) -> Vec<Vec<Vec<String>>> {
 
 #[derive(Debug)]
 pub enum Phase2Error {
-    InvalidContribution,
+    InvalidContribution(String),
     SynthesisError(SynthesisError),
     IoError(std::io::Error),
 }
@@ -194,7 +194,7 @@ pub enum Phase2Error {
 impl fmt::Display for Phase2Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Phase2Error::InvalidContribution => write!(f, "Invalid contribution"),
+            Phase2Error::InvalidContribution(e) => write!(f, "Invalid contribution: {:?}", e),
             Phase2Error::SynthesisError(e) => write!(f, "Synthesis error: {:?}", e),
             Phase2Error::IoError(e) => write!(f, "IO error: {:?}", e),
         }
