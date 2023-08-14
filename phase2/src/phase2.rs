@@ -6,8 +6,6 @@ use std::fs::OpenOptions;
 use parameters::*;
 use utils::Phase2Error;
 
-use crate::utils::map_io_phase2_error;
-
 /// Make a new contribution with entropy to the last params file (in_params_filename) 
 /// and writes to the new params file (out_params_filename).
 /// Returns the contribution hash if successful, otherwises returns the error message.
@@ -50,7 +48,7 @@ pub fn contribute(
         // Interpret the first 32 bytes of the digest as 8 32-bit words
         let mut seed = [0u32; 8];
         for i in 0..8 {
-            seed[i] = digest.read_u32::<BigEndian>().map_err(map_io_phase2_error)?;
+            seed[i] = digest.read_u32::<BigEndian>()?;
         }
 
         ChaChaRng::from_seed(&seed)
@@ -58,9 +56,8 @@ pub fn contribute(
 
     let reader = OpenOptions::new()
                             .read(true)
-                            .open(in_params_filename)
-                            .map_err(map_io_phase2_error)?;
-    let mut params = MPCParameters::read(reader, disallow_points_at_infinity, true).map_err(map_io_phase2_error)?;
+                            .open(in_params_filename)?;
+    let mut params = MPCParameters::read(reader, disallow_points_at_infinity, true)?;
 
     println!("Contributing to {}...", in_params_filename);
 
@@ -68,8 +65,8 @@ pub fn contribute(
     println!("Contribution hash: 0x{:02x}", hash.iter().format(""));
 
     println!("Writing parameters to {}.", out_params_filename);
-    let mut f = File::create(out_params_filename).map_err(map_io_phase2_error)?;
-    params.write(&mut f).map_err(map_io_phase2_error)?;
+    let mut f = File::create(out_params_filename)?;
+    params.write(&mut f)?;
     if print_progress {
         println!("New parameters are written to file");
     }
@@ -86,15 +83,13 @@ pub fn verify_single_contribution(
 
     let old_reader = OpenOptions::new()
                                 .read(true)
-                                .open(old_params_filename)
-                                .map_err(map_io_phase2_error)?;
-    let old_params = MPCParameters::read(old_reader, disallow_points_at_infinity, true).map_err(map_io_phase2_error)?;
+                                .open(old_params_filename)?;
+    let old_params = MPCParameters::read(old_reader, disallow_points_at_infinity, true)?;
 
     let new_reader = OpenOptions::new()
                                 .read(true)
-                                .open(new_params_filename)
-                                .map_err(map_io_phase2_error)?;
-    let new_params = MPCParameters::read(new_reader, disallow_points_at_infinity, true).map_err(map_io_phase2_error)?;
+                                .open(new_params_filename)?;
+    let new_params = MPCParameters::read(new_reader, disallow_points_at_infinity, true)?;
 
     verify_contribution(&old_params, &new_params)
 }

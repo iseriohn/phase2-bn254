@@ -2,6 +2,7 @@ extern crate bellman_ce;
 extern crate rand;
 extern crate byteorder;
 extern crate crossbeam;
+extern crate log;
 
 #[cfg(feature = "wasm")]
 use bellman_ce::singlecore::Worker;
@@ -28,6 +29,8 @@ use std::{
         Arc
     }
 };
+
+use self::log::{info, error};
 
 use bellman_ce::pairing::{
     ff::{
@@ -529,49 +532,60 @@ impl MPCParameters {
         radix_directory: &String,
     ) -> Result<Vec<[u8; 64]>, Phase2Error>
     {
-        let initial_params = MPCParameters::new(circuit, should_filter_points_at_infinity, radix_directory).map_err(map_synthesis_phase2_error)?;
+        let initial_params = MPCParameters::new(circuit, should_filter_points_at_infinity, radix_directory)?;
 
         // H/L will change, but should have same length
         if initial_params.params.h.len() != self.params.h.len() {
-            return Err(Phase2Error::new("H will change, but should have same length"));
+            error!("H will change, but should have same length");
+            return Err(Phase2Error::InvalidContribution);
         }
         if initial_params.params.l.len() != self.params.l.len() {
-            return Err(Phase2Error::new("L will change, but should have same length"));
+            error!("L will change, but should have same length");
+            return Err(Phase2Error::InvalidContribution);
         }
 
         // A/B_G1/B_G2 doesn't change at all
         if initial_params.params.a != self.params.a {
-            return Err(Phase2Error::new("A doesn't change at all"));
+            error!("A doesn't change at all");
+            return Err(Phase2Error::InvalidContribution);
         }
         if initial_params.params.b_g1 != self.params.b_g1 {
-            return Err(Phase2Error::new("B_G1 doesn't change at all"));
+            error!("B_G1 doesn't change at all");
+            return Err(Phase2Error::InvalidContribution);
         }
         if initial_params.params.b_g2 != self.params.b_g2 {
-            return Err(Phase2Error::new("B_G2 doesn't change at all"));
+            error!("B_G2 doesn't change at all");
+            return Err(Phase2Error::InvalidContribution);
         }
 
         // alpha/beta/gamma don't change
         if initial_params.params.vk.alpha_g1 != self.params.vk.alpha_g1 {
-            return Err(Phase2Error::new("alpha don't change"));
+            error!("alpha don't change");
+            return Err(Phase2Error::InvalidContribution);
         }
         if initial_params.params.vk.beta_g1 != self.params.vk.beta_g1 {
-            return Err(Phase2Error::new("beta_g1 don't change"));
+            error!("beta_g1 don't change");
+            return Err(Phase2Error::InvalidContribution);
         }
         if initial_params.params.vk.beta_g2 != self.params.vk.beta_g2 {
-            return Err(Phase2Error::new("beta_g2 don't change"));
+            error!("beta_g2 don't change");
+            return Err(Phase2Error::InvalidContribution);
         }
         if initial_params.params.vk.gamma_g2 != self.params.vk.gamma_g2 {
-            return Err(Phase2Error::new("gamma don't change"));
+            error!("gamma don't change");
+            return Err(Phase2Error::InvalidContribution);
         }
 
         // IC shouldn't change, as gamma doesn't change
         if initial_params.params.vk.ic != self.params.vk.ic {
-            return Err(Phase2Error::new("IC shouldn't change, as gamma doesn't change"));
+            error!("IC shouldn't change, as gamma doesn't change");
+            return Err(Phase2Error::InvalidContribution);
         }
 
         // cs_hash should be the same
         if &initial_params.cs_hash[..] != &self.cs_hash[..] {
-            return Err(Phase2Error::new("cs_hash should be the same"));
+            error!("cs_hash should be the same");
+            return Err(Phase2Error::InvalidContribution);
         }
 
         let sink = io::sink();
@@ -592,14 +606,16 @@ impl MPCParameters {
 
             // The transcript must be consistent
             if &pubkey.transcript[..] != h.as_ref() {
-                return Err(Phase2Error::new("The transcript must be consistent"));
+                error!("The transcript must be consistent");
+                return Err(Phase2Error::InvalidContribution);
             }
 
             let r = hash_to_g2(h.as_ref()).into_affine();
 
             // Check the signature of knowledge
             if !same_ratio((r, pubkey.r_delta), (pubkey.s, pubkey.s_delta)) {
-                return Err(Phase2Error::new("Fail to check the signature of knowledge"));
+                error!("Fail to check the signature of knowledge");
+                return Err(Phase2Error::InvalidContribution);
             }
 
             // Check the change from the old delta is consistent
@@ -607,7 +623,8 @@ impl MPCParameters {
                 (current_delta, pubkey.delta_after),
                 (r, pubkey.r_delta)
             ) {
-                return Err(Phase2Error::new("Fail to check the change from the old delta is consistent"));
+                error!("Fail to check the change from the old delta is consistent");
+                return Err(Phase2Error::InvalidContribution);
             }
 
             current_delta = pubkey.delta_after;
@@ -625,7 +642,8 @@ impl MPCParameters {
 
         // Current parameters should have consistent delta in G1
         if current_delta != self.params.vk.delta_g1 {
-            return Err(Phase2Error::new("Current parameters should have consistent delta in G1"));
+            error!("Current parameters should have consistent delta in G1");
+            return Err(Phase2Error::InvalidContribution);
         }
 
         // Current parameters should have consistent delta in G2
@@ -633,7 +651,8 @@ impl MPCParameters {
             (G1Affine::one(), current_delta),
             (G2Affine::one(), self.params.vk.delta_g2)
         ) {
-            return Err(Phase2Error::new("Current parameters should have consistent delta in G2"));
+            error!("Current parameters should have consistent delta in G2");
+            return Err(Phase2Error::InvalidContribution);
         }
 
         // H and L queries should be updated with delta^-1
@@ -641,14 +660,16 @@ impl MPCParameters {
             merge_pairs(&initial_params.params.h, &self.params.h),
             (self.params.vk.delta_g2, G2Affine::one()) // reversed for inverse
         ) {
-            return Err(Phase2Error::new("H queries should be updated with delta^-1"));
+            error!("H queries should be updated with delta^-1");
+            return Err(Phase2Error::InvalidContribution);
         }
 
         if !same_ratio(
             merge_pairs(&initial_params.params.l, &self.params.l),
             (self.params.vk.delta_g2, G2Affine::one()) // reversed for inverse
         ) {
-            return Err(Phase2Error::new("L queries should be updated with delta^-1"));
+            error!("L queries should be updated with delta^-1");
+            return Err(Phase2Error::InvalidContribution);
         }
 
         Ok(result)
@@ -726,55 +747,68 @@ pub fn verify_contribution(
 {
     // Transformation involves a single new object
     if after.contributions.len() != (before.contributions.len() + 1) {
-        return Err(Phase2Error::new("Transformation involves a single new object"));
+        error!("Transformation involves a single new object");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     // None of the previous transformations should change
     if &before.contributions[..] != &after.contributions[0..before.contributions.len()] {
-        return Err(Phase2Error::new("None of the previous transformations should change"));
+        error!("None of the previous transformations should change");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     // H/L will change, but should have same length
     if before.params.h.len() != after.params.h.len() {
-        return Err(Phase2Error::new("H will change, but should have same length"));
+        error!("H will change, but should have same length");
+        return Err(Phase2Error::InvalidContribution);
     }
     if before.params.l.len() != after.params.l.len() {
-        return Err(Phase2Error::new("L will change, but should have same length"));
+        error!("L will change, but should have same length");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     // A/B_G1/B_G2 doesn't change at all
     if before.params.a != after.params.a {
-        return Err(Phase2Error::new("A doesn't change at all"));
+        error!("A doesn't change at all");
+        return Err(Phase2Error::InvalidContribution);
     }
     if before.params.b_g1 != after.params.b_g1 {
-        return Err(Phase2Error::new("B_G1 doesn't change at all"));
+        error!("B_G1 doesn't change at all");
+        return Err(Phase2Error::InvalidContribution);
     }
     if before.params.b_g2 != after.params.b_g2 {
-        return Err(Phase2Error::new("B_G2 doesn't change at all"));
+        error!("B_G2 doesn't change at all");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     // alpha/beta/gamma don't change
     if before.params.vk.alpha_g1 != after.params.vk.alpha_g1 {
-        return Err(Phase2Error::new("alpha don't change"));
+        error!("alpha don't change");
+        return Err(Phase2Error::InvalidContribution);
     }
     if before.params.vk.beta_g1 != after.params.vk.beta_g1 {
-        return Err(Phase2Error::new("beta_g1 don't change"));
+        error!("beta_g1 don't change");
+        return Err(Phase2Error::InvalidContribution);
     }
     if before.params.vk.beta_g2 != after.params.vk.beta_g2 {
-        return Err(Phase2Error::new("beta_g2 don't change"));
+        error!("beta_g2 don't change");
+        return Err(Phase2Error::InvalidContribution);
     }
     if before.params.vk.gamma_g2 != after.params.vk.gamma_g2 {
-        return Err(Phase2Error::new("gamma don't change"));
+        error!("gamma don't change");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     // IC shouldn't change, as gamma doesn't change
     if before.params.vk.ic != after.params.vk.ic {
-        return Err(Phase2Error::new("IC shouldn't change, as gamma doesn't change"));
+        error!("IC shouldn't change, as gamma doesn't change");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     // cs_hash should be the same
     if &before.cs_hash[..] != &after.cs_hash[..] {
-        return Err(Phase2Error::new("cs_hash should be the same"));
+        error!("cs_hash should be the same");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     let sink = io::sink();
@@ -793,14 +827,16 @@ pub fn verify_contribution(
 
     // The transcript must be consistent
     if &pubkey.transcript[..] != h.as_ref() {
-        return Err(Phase2Error::new("The transcript must be consistent"));
+        error!("The transcript must be consistent");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     let r = hash_to_g2(h.as_ref()).into_affine();
 
     // Check the signature of knowledge
     if !same_ratio((r, pubkey.r_delta), (pubkey.s, pubkey.s_delta)) {
-        return Err(Phase2Error::new("Fail to check the signature of knowledge"));
+        error!("Fail to check the signature of knowledge");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     // Check the change from the old delta is consistent
@@ -808,12 +844,14 @@ pub fn verify_contribution(
         (before.params.vk.delta_g1, pubkey.delta_after),
         (r, pubkey.r_delta)
     ) {
-        return Err(Phase2Error::new("Fail to check the change from the old delta is consistent"));
+        error!("Fail to check the change from the old delta is consistent");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     // Current parameters should have consistent delta in G1
     if pubkey.delta_after != after.params.vk.delta_g1 {
-        return Err(Phase2Error::new("Current parameters should have consistent delta in G1"));
+        error!("Current parameters should have consistent delta in G1");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     // Current parameters should have consistent delta in G2
@@ -821,7 +859,8 @@ pub fn verify_contribution(
         (G1Affine::one(), pubkey.delta_after),
         (G2Affine::one(), after.params.vk.delta_g2)
     ) {
-        return Err(Phase2Error::new("Current parameters should have consistent delta in G2"));
+        error!("Current parameters should have consistent delta in G2");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     // H and L queries should be updated with delta^-1
@@ -829,14 +868,16 @@ pub fn verify_contribution(
         merge_pairs(&before.params.h, &after.params.h),
         (after.params.vk.delta_g2, before.params.vk.delta_g2) // reversed for inverse
     ) {
-        return Err(Phase2Error::new("H queries should be updated with delta^-1"));
+        error!("H queries should be updated with delta^-1");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     if !same_ratio(
         merge_pairs(&before.params.l, &after.params.l),
         (after.params.vk.delta_g2, before.params.vk.delta_g2) // reversed for inverse
     ) {
-        return Err(Phase2Error::new("L queries should be updated with delta^-1"));
+        error!("L queries should be updated with delta^-1");
+        return Err(Phase2Error::InvalidContribution);
     }
 
     let sink = io::sink();
